@@ -102,6 +102,4 @@ function draw()
 	noStroke();
 	fill(255);
 	text("collectable item", 400, 400);
-
-	circle(50, 50, 25);
 }
