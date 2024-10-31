@@ -31,6 +31,7 @@ let coinPosition = {
 	y: 400
 };
 let coinDirection;
+let isMoving = true;
 
 function setup()
 {
@@ -92,9 +93,11 @@ function draw()
 	//... add your code here
 
 	drawCoin(coinPosition.x, coinPosition.y);
-	coinPosition = {
-		x: coinPosition.x + coinAxisSpeed.x,
-		y: coinPosition.y + coinAxisSpeed.y
+	if(isMoving) {
+		coinPosition = {
+			x: coinPosition.x + coinAxisSpeed.x,
+			y: coinPosition.y + coinAxisSpeed.y
+		}
 	}
 	
 
@@ -122,6 +125,9 @@ function keyPressed() {
 			y: -coinAxisSpeed.y
 		};
 	} // if "space" is pressed then change axis speed of the coin to make it go the other direction
+	if(keyCode === 13) {
+		isMoving = !isMoving;
+	} // if "Enter" is pressed then stop
 }
 
 function drawCoin(x, y) {
