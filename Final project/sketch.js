@@ -83,27 +83,24 @@ const scoreCounter = {
 function preload() {
 	soundFormats('mp3', 'wav');
 	sounds.music = loadSound("/HoliznaCC0 - Game BOI 2.mp3");
-	sounds.music.amp(0.15);
+	sounds.music.amp(0.1);
 	sounds.death = loadSound("/DeathByEnemy.wav");
+	sounds.death.amp(0.5);
 	sounds.fall = loadSound("/FallIntoCanyon.wav");
-	sounds.fall.amp(0.5);
+	sounds.fall.amp(0.25);
 	sounds.kill = loadSound("/EnemyDeath.wav");
-	sounds.kill.amp(0.5);
+	sounds.kill.amp(0.25);
 	sounds.coin = loadSound("/Coin.wav");
-	sounds.coin.amp(0.75); // loads music and sounds, turns the volume of some sounds down
+	sounds.coin.amp(0.5); // loads music and sounds, turns the volume of some sounds down
 }
 
 function setup() {
 	createCanvas(canvasSize.x, canvasSize.y);
 	frameRate(60);
+	sounds.music.loop();
 }
 
 function draw() {
-	if (!sounds.music.isPlaying()) {
-		sounds.music.play();
-		sounds.music.loop();
-		userStartAudio();
-	} // starts and loops the music
 
 	background(100, 155, 255); //fill the sky blue
 
