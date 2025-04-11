@@ -122,15 +122,15 @@ function draw() {
 
 	gameObjects.canyons.forEach(canyon => canyon.draw()); // draws all canyons
 
-	gameObjects.coins.forEach((coin, ind) => (coin.move(), coin.collect(ind), coin.draw())); // moves and draws all coins
+	gameObjects.coins.forEach((coin, ind) => (coin.move(), coin.collect(ind), coin.draw())); // moves, draws and collects all coins
 
 	gameObjects.enemies.forEach((enemy, ind) => (enemy.move(), enemy.death(ind), enemy.draw())); // moves, draws and kills all enemies
 
 	if (!gameObjects.mainCharacter.IsDead) {
-		(char => (char.move(), char.death(), char.draw()))(gameObjects.mainCharacter); // moves and draws character
+		(char => (char.move(), char.death(), char.draw()))(gameObjects.mainCharacter); // moves and draws character, if he is not dead
 	}
 
-	(counter => (counter.checkScore(), counter.draw()))(scoreCounter);
+	(counter => (counter.checkScore(), counter.draw()))(scoreCounter); //draws score counter
 
 	objectGenerator(3); // generate random object every 3 seconds
 }
@@ -196,7 +196,7 @@ function Tree(posX, size) { //posX is coords for bottom left corner of a tree tr
 	return this;
 }
 
-function Ground() {
+function Ground() { //ground visual
 	this.x = 0;
 	this.y = groundBorder;
 	this.width = canvasSize.x;
@@ -281,13 +281,6 @@ function Coin(posX, posY, speed, size) { //posX and posY are coords for the cent
 			height: 70
 		};
 
-		let sides = {
-			left: this.x - this.radius,
-			right: this.x + this.radius,
-			top: this.y - this.radius,
-			bottom: this.y + this.radius
-		};
-
 		distX = collectionZone.x - this.x;
 		distY = collectionZone.y - this.y
 
@@ -296,7 +289,7 @@ function Coin(posX, posY, speed, size) { //posX and posY are coords for the cent
 			sounds.coin.play();
 			gameObjects.coins.splice(ind, 1);
 		}
-	}
+	} //collects coin
 
 	return this;
 }
@@ -497,9 +490,6 @@ function Character() { // coords of this objects are located in the middle of bo
 				this.movement.isInAir = false;
 				this.movement.velocityY = 0;
 				this.y = groundBorder;
-			} else if (this.y >= canvasSize.y) {
-				sounds.fall.play();
-				this.deathScreen();
 			}
 		} // checks if character should jump or fall
 
@@ -508,6 +498,11 @@ function Character() { // coords of this objects are located in the middle of bo
 	};
 
 	this.death = function () {
+		if (this.y >= canvasSize.y) {
+			sounds.fall.play();
+			this.deathScreen();
+		}
+
 		for (i = 0; i < gameObjects.enemies.length; i++) {
 			let enemy = gameObjects.enemies[i];
 			let sides = {
