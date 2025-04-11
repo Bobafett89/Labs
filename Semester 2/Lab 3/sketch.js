@@ -43,6 +43,12 @@ const gameObjects = {
 		new Canyon(600, 100)
 	],
 
+	platforms: [
+		new Platform(175, 350, 100, 25, "Green"),
+		
+		new Platform(100, 250, 100, 25, "Green")
+	],
+
 	coins: [
 	],
 
@@ -121,6 +127,8 @@ function draw() {
 	gameObjects.sceneryObjects.forEach(object => object.draw()); // draws all background objects
 
 	gameObjects.canyons.forEach(canyon => canyon.draw()); // draws all canyons
+
+	gameObjects.platforms.forEach(platfrom => platfrom.draw()); //draws all platforms
 
 	gameObjects.coins.forEach((coin, ind) => (coin.move(), coin.collect(ind), coin.draw())); // moves, draws and collects all coins
 
@@ -211,12 +219,27 @@ function Ground() { //ground visual
 	return this;
 }
 
+function Platform(posX, posY, width, height, color) {//posX and posY are coords for top left corner. width and height are width and height of a platform
+	this.x = posX;
+	this.y = posY;
+	this.width = width;
+	this.height = height;
+	this.color = color;
+
+	this.draw = function() {
+		fill(this.color);
+		stroke(0);
+		rect(posX, posY, width, height);
+	}
+}
+
 function Flag(posX, color) { //posX is coords for center of pole, color is the colour of the flag
 	this.x = posX;
 	this.color = color;
 
 	this.draw = function () {
 		fill("Brown");
+		noStroke();
 		rect(this.x - 3, groundBorder - 50, 7, 50);
 		fill(this.color);
 		triangle(this.x + 4, groundBorder - 50, this.x + 4, groundBorder - 26, this.x + 25, groundBorder - 38);
@@ -233,6 +256,7 @@ function Coin(posX, posY, speed, size) { //posX and posY are coords for the cent
 
 	this.draw = function () {
 		fill(240, 200, 0);
+		noStroke();
 		circle(this.x, this.y, 2 * this.radius);
 		fill(255);
 		textSize(25 * this.k);
@@ -304,10 +328,12 @@ function Character() { // coords of this objects are located in the middle of bo
 		walkDirection: 0,
 		jumpSpeed: charStarParam.movement.jumpSpeed,
 		jumpHeight: charStarParam.movement.jumpHeight,
+		groundBorder: groundBorder,
 		velocityY: 0,
 		gravityAcc: charStarParam.movement.gravityAcc,
-		ableToJump: charStarParam.charStartPoint.y === groundBorder,
+		ableToJump: charStarParam.charStartPoint.y === this.groundBorder,
 		isInAir: !this.ableToJump,
+		jumpGround: this.groundBorder,
 		inCanyon: false
 	};
 
@@ -322,7 +348,7 @@ function Character() { // coords of this objects are located in the middle of bo
 
 			line(this.x + 5, this.y - 20, this.x + 5, this.y); //right leg
 
-			line(this.x - 11, this.y - 55, this.x - 11, this.y - 35); //left arm
+			line(this.x - 12, this.y - 55, this.x - 12, this.y - 35); //left arm
 
 			line(this.x + 12, this.y - 55, this.x + 12, this.y - 35); //right arm
 
@@ -345,8 +371,8 @@ function Character() { // coords of this objects are located in the middle of bo
 
 			line(this.x + 5, this.y - 20, this.x + 5, this.y); //right leg
 
-			line(this.x - 11, this.y - 55, this.x - 11, this.y - 45);
-			line(this.x - 11, this.y - 45, this.x - 1, this.y - 45); //left arm
+			line(this.x - 12, this.y - 55, this.x - 12, this.y - 45);
+			line(this.x - 12, this.y - 45, this.x - 1, this.y - 45); //left arm
 
 			line(this.x + 12, this.y - 55, this.x + 12, this.y - 45);
 			line(this.x + 12, this.y - 45, this.x + 22, this.y - 45); //right arm
@@ -369,8 +395,8 @@ function Character() { // coords of this objects are located in the middle of bo
 
 			line(this.x + 5, this.y - 20, this.x + 5, this.y); //right leg
 
-			line(this.x - 11, this.y - 55, this.x - 11, this.y - 45);
-			line(this.x - 11, this.y - 45, this.x - 21, this.y - 45); //left arm
+			line(this.x - 12, this.y - 55, this.x - 12, this.y - 45);
+			line(this.x - 12, this.y - 45, this.x - 21, this.y - 45); //left arm
 
 			line(this.x + 12, this.y - 55, this.x + 12, this.y - 45);
 			line(this.x + 12, this.y - 45, this.x + 2, this.y - 45); //right arm
@@ -393,7 +419,7 @@ function Character() { // coords of this objects are located in the middle of bo
 
 			line(this.x + 5, this.y - 20, this.x + 5, this.y); //right leg
 
-			line(this.x - 11, this.y - 55, this.x - 11, this.y - 75); //left arm
+			line(this.x - 12, this.y - 55, this.x - 12, this.y - 75); //left arm
 
 			line(this.x + 12, this.y - 55, this.x + 12, this.y - 75); //right arm
 
@@ -418,8 +444,8 @@ function Character() { // coords of this objects are located in the middle of bo
 			line(this.x + 5, this.y - 20, this.x + 5, this.y - 10);
 			line(this.x + 5, this.y - 10, this.x - 5, this.y - 10); //right leg
 
-			line(this.x - 11, this.y - 55, this.x - 11, this.y - 45);
-			line(this.x - 11, this.y - 45, this.x - 1, this.y - 45); //left arm
+			line(this.x - 12, this.y - 55, this.x - 12, this.y - 45);
+			line(this.x - 12, this.y - 45, this.x - 1, this.y - 45); //left arm
 
 			line(this.x + 12, this.y - 55, this.x + 12, this.y - 45);
 			line(this.x + 12, this.y - 45, this.x + 22, this.y - 45); //right arm
@@ -444,8 +470,8 @@ function Character() { // coords of this objects are located in the middle of bo
 			line(this.x + 5, this.y - 20, this.x + 5, this.y - 10);
 			line(this.x + 5, this.y - 10, this.x + 15, this.y - 10); //right leg
 
-			line(this.x - 11, this.y - 55, this.x - 11, this.y - 45);
-			line(this.x - 11, this.y - 45, this.x - 21, this.y - 45); //left arm
+			line(this.x - 12, this.y - 55, this.x - 12, this.y - 45);
+			line(this.x - 12, this.y - 45, this.x - 21, this.y - 45); //left arm
 
 			line(this.x + 12, this.y - 55, this.x + 12, this.y - 45);
 			line(this.x + 12, this.y - 45, this.x + 2, this.y - 45); //right arm
@@ -460,14 +486,6 @@ function Character() { // coords of this objects are located in the middle of bo
 	};
 
 	this.move = function () {
-		for (i = 0; i < gameObjects.canyons.length; i++) {
-			let canyon = gameObjects.canyons[i];
-			if ((this.x - 11) > canyon.x && (this.x + 11) < (canyon.x + canyon.width) && this.y >= groundBorder) { // ±11 is offset for arms
-				this.movement.inCanyon = true;
-				this.movement.isInAir = true;
-			}
-		} // checks if player should fall into canyon
-
 		if (keyIsDown(68) && !this.movement.inCanyon && this.x < canvasSize.x - 11) {
 			this.movement.walkDirection = 1;
 		} else if (keyIsDown(65) && !this.movement.inCanyon && this.x > 11) {
@@ -476,22 +494,55 @@ function Character() { // coords of this objects are located in the middle of bo
 			this.movement.walkDirection = 0;
 		} // checks which direction character should walk
 
+		let foundPlatform = false;
+		let sortedPlatforms = gameObjects.platforms.toSorted((a, b) => b.y - a.y);
+		for(i = 0; i < gameObjects.platforms.length; i++) {
+			let platform = sortedPlatforms[i];
+			if( (((this.x - 11) >= platform.x && (this.x - 11) <= (platform.x + platform.width)) ||
+				((this.x + 11) >= platform.x && (this.x + 11) <= (platform.x + platform.width))) &&
+				this.y <= platform.y) {
+				this.movement.groundBorder = platform.y;
+				foundPlatform = true;
+			}
+		} //checks and sets platforms as ground
+		if(!foundPlatform && this.movement.groundBorder != groundBorder) {
+			this.movement.groundBorder = groundBorder;
+		}//check if there is no platform underneath after standing on one
+
+		for (i = 0; i < gameObjects.canyons.length; i++) {
+			let canyon = gameObjects.canyons[i];
+			if ((this.x - 11) > canyon.x && (this.x + 11) < (canyon.x + canyon.width) && this.y >= groundBorder) { // ±11 is offset for arms
+				this.movement.inCanyon = true;
+				this.movement.isInAir = true;
+			}
+		} // checks if player should fall into canyon
+
 		if (keyIsDown(32) && this.movement.ableToJump && !this.movement.inCanyon) { // keycode 32 is for space
+			if(!this.movement.isInAir) {
+				this.movement.jumpGround = this.movement.groundBorder;
+			}
 			this.movement.velocityY = -this.movement.jumpSpeed;
 			this.movement.isInAir = true;
-			if (this.y <= (groundBorder - this.movement.jumpHeight)) {
+			if (this.y <= (this.movement.jumpGround - this.movement.jumpHeight)) {
 				this.movement.ableToJump = false;
 			}
 		} else if (this.movement.isInAir || this.movement.inCanyon) {
 			this.movement.velocityY += this.movement.gravityAcc / frameRate();
+			if((this.y + this.movement.velocityY / frameRate()) >= this.movement.groundBorder && !this.movement.inCanyon) {
+				this.movement.velocityY = (this.movement.groundBorder - this.y) * frameRate();
+			}//checks if you should reach the ground in this frame
+
 			this.movement.ableToJump = false;
-			if (this.y >= groundBorder && !this.movement.inCanyon) {
+			if (this.y >= this.movement.groundBorder && !this.movement.inCanyon) {
 				this.movement.ableToJump = true;
 				this.movement.isInAir = false;
 				this.movement.velocityY = 0;
-				this.y = groundBorder;
+				this.y = this.movement.groundBorder;
 			}
-		} // checks if character should jump or fall
+		} else if (this.y != this.movement.groundBorder) {
+			this.movement.isInAir = true;
+			this.movement.ableToJump = false;
+		}// checks if character should jump or fall
 
 		this.x += this.movement.walkSpeed * this.movement.walkDirection / frameRate();
 		this.y += this.movement.velocityY / frameRate();
@@ -558,12 +609,12 @@ function Character() { // coords of this objects are located in the middle of bo
 		gameObjects.enemies = [];
 		gameObjects.coins = [];
 		this.IsDead = false;
-		this.movement.ableToJump = true;
-		this.movement.isInAir = false;
-		this.movement.velocityY = 0;
 		this.x = charStarParam.charStartPoint.x;
 		this.y = charStarParam.charStartPoint.y;
 		this.movement.inCanyon = false;
+		this.movement.ableToJump = charStarParam.charStartPoint.y === this.groundBorder;
+		this.movement.isInAir = !this.movement.ableToJump;
+		this.movement.velocityY = 0;
 		scoreCounter.score = 0;
 	}
 
@@ -581,8 +632,8 @@ function Enemy(posX, speed, size) { //posX is coords for the center of an enemy.
 
 	this.draw = function () {
 		fill(225, 0, 0);
+		noStroke();
 		circle(this.x, this.y, 2 * this.radius);
-		fill(255);
 	}
 
 	this.move = function () {
