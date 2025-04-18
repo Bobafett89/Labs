@@ -85,37 +85,57 @@ const sliders = { music: undefined, sfx: undefined };
 
 const buttons = { reset: undefined, musicOff: undefined };
 
+const images = { music: undefined, sound: undefined, musicOff: undefined, soundOff: undefined};
+
 function preload() {
 	soundFormats('mp3', 'wav');
 	sounds.music = loadSound("assets/HoliznaCC0 - Game BOI 2.mp3");
-	sounds.music.amp(0.1);
 	sounds.death = loadSound("assets/DeathByEnemy.wav");
-	sounds.death.amp(0.5);
 	sounds.fall = loadSound("assets/FallIntoCanyon.wav");
-	sounds.fall.amp(0.25);
 	sounds.kill = loadSound("assets/EnemyDeath.wav");
-	sounds.kill.amp(0.25);
 	sounds.coin = loadSound("assets/Coin.wav");
-	sounds.coin.amp(0.5); // loads music and sounds, turns the volume of some sounds down
 }
 
 function setup() {
 	createCanvas(canvasSize.x, canvasSize.y);
 	frameRate(fps);
+
 	sounds.music.loop();
-	sliders.music = createSlider(0, 100, 25);
+
+	sliders.music = createSlider(0, 100, 50);
 	sliders.music.position(0, canvasSize.y);
 	sliders.music.size(100);
-	sliders.sfx = createSlider(0, 100, 25);
+	sliders.music.style("writing-mode", "sideways-lr");
+	sliders.sfx = createSlider(0, 100, 50);
 	sliders.sfx.position(100, canvasSize.y);
 	sliders.sfx.size(100);
+	sliders.sfx.style("writing-mode", "sideways-lr");
+
 	buttons.reset = createButton('Reset');
 	buttons.reset.position(canvasSize.x / 2, canvasSize.y / 2);
+	buttons.reset.style("border", "2px solid");
+	buttons.reset.style("border-radius", "10px");
 	buttons.reset.hide();
-	buttons.musicOff = createButton('Pause music')
+	buttons.musicOff = createButton('Pause')
 	buttons.musicOff.mousePressed(pauseMusic);
-	buttons.musicOff.position(200, canvasSize.y);
-
+	buttons.musicOff.position(25, canvasSize.y+165);
+	buttons.musicOff.style("border", "2px solid");
+	buttons.musicOff.style("border-radius", "10px");
+	
+	images.music = createImg("assets/music.svg");
+	images.music.size(25, 25);
+	images.music.position(37, canvasSize.y+135);
+	images.musicOff = createImg("assets/off.svg");
+	images.musicOff.size(25, 25);
+	images.musicOff.position(37, canvasSize.y+135);
+	images.musicOff.hide();
+	images.sound = createImg("assets/sfx.svg");
+	images.sound.size(25, 25);
+	images.sound.position(140, canvasSize.y+135);
+	images.soundOff = createImg("assets/off.svg");
+	images.soundOff.size(25, 25);
+	images.soundOff.position(140, canvasSize.y+135);
+	images.soundOff.hide();
 }
 
 function draw() {
@@ -697,11 +717,26 @@ function objectGenerator(seconds) { //random object generator, seconds is how mu
 }
 
 function soundVolume(musicVol, sfxVol) { //musicVol is volume of music and sfxVol is volume of sfx
-	sounds.music.amp(musicVol);
-	sounds.coin.amp(sfxVol);
-	sounds.death.amp(sfxVol);
-	sounds.fall.amp(sfxVol);
-	sounds.kill.amp(sfxVol);
+	sounds.music.amp(musicVol * 0.1);
+	sounds.coin.amp(sfxVol * 0.5);
+	sounds.death.amp(sfxVol * 0.5);
+	sounds.fall.amp(sfxVol * 0.25);
+	sounds.kill.amp(sfxVol * 0.25);
+
+	if(sounds.music.amp().value === 0 || sounds.music.isPaused()) {
+		images.music.hide();
+		images.musicOff.show();
+	} else {
+		images.music.show();
+		images.musicOff.hide();
+	}
+	if(sounds.death.amp().value === 0) {
+		images.sound.hide();
+		images.soundOff.show();
+	} else {
+		images.sound.show();
+		images.soundOff.hide();
+	}
 }
 
 function pauseMusic() {
