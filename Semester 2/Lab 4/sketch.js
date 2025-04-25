@@ -17,6 +17,8 @@ const canvasSize = {
 	y: 576
 };
 
+const worldSize = 1536;
+
 const groundBorder = 432;
 const fps = 60;
 
@@ -28,7 +30,7 @@ const gameObjects = {
 
 		new Mountain(500, 1),
 
-		new Tree(900, 1),
+		new Tree(1200, 1),
 
 		new Flag(425, "Red"),
 
@@ -40,13 +42,17 @@ const gameObjects = {
 	canyons: [
 		new Canyon(175, 100),
 
-		new Canyon(600, 100)
+		new Canyon(600, 100),
+
+		new Canyon(900, 200)
 	],
 
 	platforms: [
 		new Platform(175, 350, 100, 25, "Green"),
 		
-		new Platform(100, 250, 100, 25, "Green")
+		new Platform(100, 250, 100, 25, "Green"),
+
+		new Platform(900, 350, 200, 25, "Green")
 	],
 
 	coins: [
@@ -86,6 +92,8 @@ const sliders = { music: undefined, sfx: undefined };
 const buttons = { reset: undefined, musicOff: undefined };
 
 const images = { music: undefined, sound: undefined, musicOff: undefined, soundOff: undefined};
+
+const camera = new Camera();
 
 function preload() {
 	soundFormats('mp3', 'wav');
@@ -144,18 +152,23 @@ function draw() {
 
 	soundVolume(sliders.music.value() / 100, sliders.sfx.value() / 100); // set volume for sounds
 
-	gameObjects.sceneryObjects.forEach(object => object.draw()); // draws all background objects
+	let isDead = gameObjects.mainCharacter.IsDead;
+	if (!isDead) {
+		(char => (char.move(), camera.move(char), char.death()))(gameObjects.mainCharacter); // moves character and camera, checks if he is not dead
+	}
 
-	gameObjects.canyons.forEach(canyon => canyon.draw()); // draws all canyons
+	gameObjects.sceneryObjects.forEach(object => object.draw(camera.x)); // draws all background objects
 
-	gameObjects.platforms.forEach(platfrom => platfrom.draw()); //draws all platforms
+	gameObjects.canyons.forEach(canyon => canyon.draw(camera.x)); // draws all canyons
 
-	gameObjects.coins.forEach((coin, ind) => (coin.move(), coin.collect(ind), coin.draw())); // moves, draws and collects all coins
+	gameObjects.platforms.forEach(platfrom => platfrom.draw(camera.x)); //draws all platforms
 
-	gameObjects.enemies.forEach((enemy, ind) => (enemy.move(), enemy.death(ind), enemy.draw())); // moves, draws and kills all enemies
+	gameObjects.coins.forEach((coin, ind) => (coin.move(), coin.collect(ind), coin.draw(camera.x))); // moves, draws and collects all coins
 
-	if (!gameObjects.mainCharacter.IsDead) {
-		(char => (char.move(), char.death(), char.draw()))(gameObjects.mainCharacter); // moves and draws character, if he is not dead
+	gameObjects.enemies.forEach((enemy, ind) => (enemy.move(), enemy.death(ind), enemy.draw(camera.x))); // moves, draws and kills all enemies
+	
+	if(!isDead) {
+		gameObjects.mainCharacter.draw(camera.x); //draws character
 	}
 
 	(counter => (counter.checkScore(), counter.draw()))(scoreCounter); //draws score counter
@@ -169,9 +182,11 @@ function Canyon(posX, width) { //posX is coords for top left corner. width is wi
 	this.width = width;
 	this.height = canvasSize.y - groundBorder;
 
-	this.draw = function () {
+	this.draw = function (cameraPos) {
+		let drawX = this.x - cameraPos + canvasSize.x / 2;
+
 		fill(100);
-		rect(this.x, this.y, this.width, this.height);
+		rect(drawX, this.y, this.width, this.height);
 	}
 
 	return this;
@@ -182,11 +197,13 @@ function Cloud(posX, posY, size) { //posX and posY are coords for the center of 
 	this.y = posY;
 	this.k = size;
 
-	this.draw = function () {
+	this.draw = function (cameraPos) {
+		let drawX = this.x - cameraPos + canvasSize.x / 2;
+
 		fill(255);
-		ellipse(this.x, this.y, 100 * this.k, 50 * this.k);
-		ellipse(this.x - (50 * this.k), this.y, 60 * this.k, 35 * this.k);
-		ellipse(this.x + (50 * this.k), this.y, 60 * this.k, 35 * this.k);
+		ellipse(drawX, this.y, 100 * this.k, 50 * this.k);
+		ellipse(drawX - (50 * this.k), this.y, 60 * this.k, 35 * this.k);
+		ellipse(drawX + (50 * this.k), this.y, 60 * this.k, 35 * this.k);
 	}
 
 	return this;
@@ -197,11 +214,13 @@ function Mountain(posX, size) { //posX is coords for bottom left corner. Default
 	this.y = groundBorder;
 	this.k = size;
 
-	this.draw = function () {
+	this.draw = function (cameraPos) {
+		let drawX = this.x - cameraPos + canvasSize.x / 2;
+
 		fill(100);
-		triangle(this.x + (50 * this.k), this.y - (132 * this.k), this.x, this.y, this.x + (100 * this.k), this.y);
+		triangle(drawX + (50 * this.k), this.y - (132 * this.k), drawX, this.y, drawX + (100 * this.k), this.y);
 		fill(255);
-		triangle(this.x + (50 * this.k), this.y - (132 * this.k), this.x + (40 * this.k), this.y - (106 * this.k), this.x + (60 * this.k), this.y - (106 * this.k));
+		triangle(drawX + (50 * this.k), this.y - (132 * this.k), drawX + (40 * this.k), this.y - (106 * this.k), drawX + (60 * this.k), this.y - (106 * this.k));
 	}
 
 	return this;
@@ -212,13 +231,14 @@ function Tree(posX, size) { //posX is coords for bottom left corner of a tree tr
 	this.y = groundBorder;
 	this.k = size;
 
-	this.draw = function () {
+	this.draw = function (cameraPos) {
+		let drawX = this.x - cameraPos + canvasSize.x / 2;
 		fill("brown");
-		rect(this.x, this.y - (27 * this.k), 15 * this.k, 27 * this.k);
+		rect(drawX, this.y - (27 * this.k), 15 * this.k, 27 * this.k);
 		fill(0, 155, 0);
-		triangle(this.x - (25 * this.k), this.y - (27 * this.k), this.x + (40 * this.k), this.y - (27 * this.k), this.x + (7 * this.k), this.y - (72 * this.k));
-		triangle(this.x - (25 * this.k), this.y - (47 * this.k), this.x + (40 * this.k), this.y - (47 * this.k), this.x + (7 * this.k), this.y - (97 * this.k));
-		triangle(this.x - (25 * this.k), this.y - (67 * this.k), this.x + (40 * this.k), this.y - (67 * this.k), this.x + (7 * this.k), this.y - (117 * this.k));
+		triangle(drawX - (25 * this.k), this.y - (27 * this.k), drawX + (40 * this.k), this.y - (27 * this.k), drawX + (7 * this.k), this.y - (72 * this.k));
+		triangle(drawX - (25 * this.k), this.y - (47 * this.k), drawX + (40 * this.k), this.y - (47 * this.k), drawX + (7 * this.k), this.y - (97 * this.k));
+		triangle(drawX - (25 * this.k), this.y - (67 * this.k), drawX + (40 * this.k), this.y - (67 * this.k), drawX + (7 * this.k), this.y - (117 * this.k));
 	}
 
 	return this;
@@ -227,7 +247,7 @@ function Tree(posX, size) { //posX is coords for bottom left corner of a tree tr
 function Ground() { //ground visual
 	this.x = 0;
 	this.y = groundBorder;
-	this.width = canvasSize.x;
+	this.width = worldSize;
 	this.height = canvasSize.y - groundBorder;
 
 	this.draw = function () {
@@ -246,10 +266,12 @@ function Platform(posX, posY, width, height, color) {//posX and posY are coords 
 	this.height = height;
 	this.color = color;
 
-	this.draw = function() {
+	this.draw = function(cameraPos) {
+		let drawX = this.x - cameraPos + canvasSize.x / 2;
+
 		fill(this.color);
 		stroke(0);
-		rect(posX, posY, width, height);
+		rect(drawX, this.y, this.width, this.height);
 	}
 }
 
@@ -257,12 +279,14 @@ function Flag(posX, color) { //posX is coords for center of pole, color is the c
 	this.x = posX;
 	this.color = color;
 
-	this.draw = function () {
+	this.draw = function (cameraPos) {
+		let drawX = this.x - cameraPos + canvasSize.x / 2;
+		
 		fill("Brown");
 		noStroke();
-		rect(this.x - 3, groundBorder - 50, 7, 50);
+		rect(drawX - 3, groundBorder - 50, 7, 50);
 		fill(this.color);
-		triangle(this.x + 4, groundBorder - 50, this.x + 4, groundBorder - 26, this.x + 25, groundBorder - 38);
+		triangle(drawX + 4, groundBorder - 50, drawX + 4, groundBorder - 26, drawX + 25, groundBorder - 38);
 	}
 }
 
@@ -274,17 +298,19 @@ function Coin(posX, posY, speed, size) { //posX and posY are coords for the cent
 	this.k = size;
 	this.radius = 20 * this.k;
 
-	this.draw = function () {
+	this.draw = function (cameraPos) {
+		let drawX = this.x - cameraPos + canvasSize.x / 2;
+
 		fill(240, 200, 0);
 		noStroke();
-		circle(this.x, this.y, 2 * this.radius);
+		circle(drawX, this.y, 2 * this.radius);
 		fill(255);
 		textSize(25 * this.k);
-		text("C", this.x - (10 * this.k), this.y + (10 * this.k));
+		text("C", drawX - (10 * this.k), this.y + (10 * this.k));
 	}
 
 	this.move = function () {
-		if (this.x >= (canvasSize.x - this.radius) || this.x <= this.radius) {
+		if (this.x >= (worldSize - this.radius) || this.x <= this.radius) {
 			if (this.direction <= Math.PI) {
 				this.direction = Math.PI - this.direction;
 			} else {
@@ -294,7 +320,7 @@ function Coin(posX, posY, speed, size) { //posX and posY are coords for the cent
 			if (this.x <= this.radius) {
 				this.x = this.radius;
 			} else {
-				this.x = canvasSize.x - this.radius;
+				this.x = worldSize - this.radius;
 			}
 		} // if it hits vertical border, change horizontal direction
 
@@ -341,6 +367,7 @@ function Coin(posX, posY, speed, size) { //posX and posY are coords for the cent
 function Character() { // coords of this objects are located in the middle of bottom border(end of legs). Height is 70 pixels and width is 22
 	this.x = charStarParam.charStartPoint.x;
 	this.y = charStarParam.charStartPoint.y;
+	this.canvasX = this.x;
 	this.IsDead = false;
 
 	this.movement = {
@@ -358,155 +385,155 @@ function Character() { // coords of this objects are located in the middle of bo
 	};
 
 	this.drawStates = {
-		drawFront: function () {
+		drawFront: function (posX) {
 			fill("red");
 			stroke(0);
-			rect(this.x - 10, this.y - 60, 20, 40); //body
+			rect(posX - 10, this.y - 60, 20, 40); //body
 
 			strokeWeight(2);
-			line(this.x - 5, this.y - 20, this.x - 5, this.y); //left leg
+			line(posX - 5, this.y - 20, posX - 5, this.y); //left leg
 
-			line(this.x + 5, this.y - 20, this.x + 5, this.y); //right leg
+			line(posX + 5, this.y - 20, posX + 5, this.y); //right leg
 
-			line(this.x - 12, this.y - 55, this.x - 12, this.y - 35); //left arm
+			line(posX - 12, this.y - 55, posX - 12, this.y - 35); //left arm
 
-			line(this.x + 12, this.y - 55, this.x + 12, this.y - 35); //right arm
+			line(posX + 12, this.y - 55, posX + 12, this.y - 35); //right arm
 
 			strokeWeight(1);
 			fill("pink");
-			rect(this.x - 5, this.y - 70, 10, 10) //face
+			rect(posX - 5, this.y - 70, 10, 10) //face
 
 			strokeWeight(2);
-			point(this.x - 2, this.y - 67)
-			point(this.x + 3, this.y - 67) //eyes
+			point(posX - 2, this.y - 67)
+			point(posX + 3, this.y - 67) //eyes
 		},
 
-		drawRight: function () {
+		drawRight: function (posX) {
 			fill("red");
 			stroke(0);
-			rect(this.x - 10, this.y - 60, 20, 40); //body
+			rect(posX - 10, this.y - 60, 20, 40); //body
 
 			strokeWeight(2);
-			line(this.x - 5, this.y - 20, this.x - 5, this.y); //left leg
+			line(posX - 5, this.y - 20, posX - 5, this.y); //left leg
 
-			line(this.x + 5, this.y - 20, this.x + 5, this.y); //right leg
+			line(posX + 5, this.y - 20, posX + 5, this.y); //right leg
 
-			line(this.x - 12, this.y - 55, this.x - 12, this.y - 45);
-			line(this.x - 12, this.y - 45, this.x - 1, this.y - 45); //left arm
+			line(posX - 12, this.y - 55, posX - 12, this.y - 45);
+			line(posX - 12, this.y - 45, posX - 1, this.y - 45); //left arm
 
-			line(this.x + 12, this.y - 55, this.x + 12, this.y - 45);
-			line(this.x + 12, this.y - 45, this.x + 22, this.y - 45); //right arm
+			line(posX + 12, this.y - 55, posX + 12, this.y - 45);
+			line(posX + 12, this.y - 45, posX + 22, this.y - 45); //right arm
 
 			strokeWeight(1);
 			fill("pink");
-			rect(this.x - 5, this.y - 70, 10, 10) //face
+			rect(posX - 5, this.y - 70, 10, 10) //face
 
 			strokeWeight(2);
-			point(this.x + 3, this.y - 67) //eye
+			point(posX + 3, this.y - 67) //eye
 		},
 
-		drawLeft: function () {
+		drawLeft: function (posX) {
 			fill("red");
 			stroke(0);
-			rect(this.x - 10, this.y - 60, 20, 40); //body
+			rect(posX - 10, this.y - 60, 20, 40); //body
 
 			strokeWeight(2);
-			line(this.x - 5, this.y - 20, this.x - 5, this.y); //left leg
+			line(posX - 5, this.y - 20, posX - 5, this.y); //left leg
 
-			line(this.x + 5, this.y - 20, this.x + 5, this.y); //right leg
+			line(posX + 5, this.y - 20, posX + 5, this.y); //right leg
 
-			line(this.x - 12, this.y - 55, this.x - 12, this.y - 45);
-			line(this.x - 12, this.y - 45, this.x - 21, this.y - 45); //left arm
+			line(posX - 12, this.y - 55, posX - 12, this.y - 45);
+			line(posX - 12, this.y - 45, posX - 21, this.y - 45); //left arm
 
-			line(this.x + 12, this.y - 55, this.x + 12, this.y - 45);
-			line(this.x + 12, this.y - 45, this.x + 2, this.y - 45); //right arm
+			line(posX + 12, this.y - 55, posX + 12, this.y - 45);
+			line(posX + 12, this.y - 45, posX + 2, this.y - 45); //right arm
 
 			strokeWeight(1);
 			fill("pink");
-			rect(this.x - 5, this.y - 70, 10, 10) //face
+			rect(posX - 5, this.y - 70, 10, 10) //face
 
 			strokeWeight(2);
-			point(this.x - 2, this.y - 67) //eye
+			point(posX - 2, this.y - 67) //eye
 		},
 
-		drawJumpFront: function () {
+		drawJumpFront: function (posX) {
 			fill("red");
 			stroke(0);
-			rect(this.x - 10, this.y - 60, 20, 40); //body
+			rect(posX - 10, this.y - 60, 20, 40); //body
 
 			strokeWeight(2);
-			line(this.x - 5, this.y - 20, this.x - 5, this.y); //left leg
+			line(posX - 5, this.y - 20, posX - 5, this.y); //left leg
 
-			line(this.x + 5, this.y - 20, this.x + 5, this.y); //right leg
+			line(posX + 5, this.y - 20, posX + 5, this.y); //right leg
 
-			line(this.x - 12, this.y - 55, this.x - 12, this.y - 75); //left arm
+			line(posX - 12, this.y - 55, posX - 12, this.y - 75); //left arm
 
-			line(this.x + 12, this.y - 55, this.x + 12, this.y - 75); //right arm
+			line(posX + 12, this.y - 55, posX + 12, this.y - 75); //right arm
 
 			strokeWeight(1);
 			fill("pink");
-			rect(this.x - 5, this.y - 70, 10, 10) //face
+			rect(posX - 5, this.y - 70, 10, 10) //face
 
 			strokeWeight(2);
-			point(this.x - 2, this.y - 67)
-			point(this.x + 3, this.y - 67) //eyes
+			point(posX - 2, this.y - 67)
+			point(posX + 3, this.y - 67) //eyes
 		},
 
-		drawJumpRight: function () {
+		drawJumpRight: function (posX) {
 			fill("red");
 			stroke(0);
-			rect(this.x - 10, this.y - 60, 20, 40); //body
+			rect(posX - 10, this.y - 60, 20, 40); //body
 
 			strokeWeight(2);
-			line(this.x - 5, this.y - 20, this.x - 5, this.y - 10);
-			line(this.x - 5, this.y - 10, this.x - 15, this.y - 10); //left leg
+			line(posX - 5, this.y - 20, posX - 5, this.y - 10);
+			line(posX - 5, this.y - 10, posX - 15, this.y - 10); //left leg
 
-			line(this.x + 5, this.y - 20, this.x + 5, this.y - 10);
-			line(this.x + 5, this.y - 10, this.x - 5, this.y - 10); //right leg
+			line(posX + 5, this.y - 20, posX + 5, this.y - 10);
+			line(posX + 5, this.y - 10, posX - 5, this.y - 10); //right leg
 
-			line(this.x - 12, this.y - 55, this.x - 12, this.y - 45);
-			line(this.x - 12, this.y - 45, this.x - 1, this.y - 45); //left arm
+			line(posX - 12, this.y - 55, posX - 12, this.y - 45);
+			line(posX - 12, this.y - 45, posX - 1, this.y - 45); //left arm
 
-			line(this.x + 12, this.y - 55, this.x + 12, this.y - 45);
-			line(this.x + 12, this.y - 45, this.x + 22, this.y - 45); //right arm
+			line(posX + 12, this.y - 55, posX + 12, this.y - 45);
+			line(posX + 12, this.y - 45, posX + 22, this.y - 45); //right arm
 
 			strokeWeight(1);
 			fill("pink");
-			rect(this.x - 5, this.y - 70, 10, 10) //face
+			rect(posX - 5, this.y - 70, 10, 10) //face
 
 			strokeWeight(2);
-			point(this.x + 3, this.y - 67) //eye
+			point(posX + 3, this.y - 67) //eye
 		},
 
-		drawJumpLeft: function () {
+		drawJumpLeft: function (posX) {
 			fill("red");
 			stroke(0);
-			rect(this.x - 10, this.y - 60, 20, 40); //body
+			rect(posX - 10, this.y - 60, 20, 40); //body
 
 			strokeWeight(2);
-			line(this.x - 5, this.y - 20, this.x - 5, this.y - 10);
-			line(this.x - 5, this.y - 10, this.x + 5, this.y - 10); //left leg
+			line(posX - 5, this.y - 20, posX - 5, this.y - 10);
+			line(posX - 5, this.y - 10, posX + 5, this.y - 10); //left leg
 
-			line(this.x + 5, this.y - 20, this.x + 5, this.y - 10);
-			line(this.x + 5, this.y - 10, this.x + 15, this.y - 10); //right leg
+			line(posX + 5, this.y - 20, posX + 5, this.y - 10);
+			line(posX + 5, this.y - 10, posX + 15, this.y - 10); //right leg
 
-			line(this.x - 12, this.y - 55, this.x - 12, this.y - 45);
-			line(this.x - 12, this.y - 45, this.x - 21, this.y - 45); //left arm
+			line(posX - 12, this.y - 55, posX - 12, this.y - 45);
+			line(posX - 12, this.y - 45, posX - 21, this.y - 45); //left arm
 
-			line(this.x + 12, this.y - 55, this.x + 12, this.y - 45);
-			line(this.x + 12, this.y - 45, this.x + 2, this.y - 45); //right arm
+			line(posX + 12, this.y - 55, posX + 12, this.y - 45);
+			line(posX + 12, this.y - 45, posX + 2, this.y - 45); //right arm
 
 			strokeWeight(1);
 			fill("pink");
-			rect(this.x - 5, this.y - 70, 10, 10) //face
+			rect(posX - 5, this.y - 70, 10, 10) //face
 
 			strokeWeight(2);
-			point(this.x - 2, this.y - 67) //eye
+			point(posX - 2, this.y - 67) //eye
 		}
 	};
 
 	this.move = function () {
-		if (keyIsDown(68) && !this.movement.inCanyon && this.x < canvasSize.x - 11) {
+		if (keyIsDown(68) && !this.movement.inCanyon && this.x < worldSize - 11) {
 			this.movement.walkDirection = 1;
 		} else if (keyIsDown(65) && !this.movement.inCanyon && this.x > 11) {
 			this.movement.walkDirection = -1;
@@ -590,29 +617,30 @@ function Character() { // coords of this objects are located in the middle of bo
 		}
 	}
 
-	this.draw = function () {
+	this.draw = function (cameraPos) {
+		let drawX = this.x - cameraPos + canvasSize.x / 2;
 		if (this.movement.isInAir) {
 			switch (this.movement.walkDirection) {
 				case 0:
-					this.drawStates.drawJumpFront.bind(this)();
+					this.drawStates.drawJumpFront.bind(this)(drawX);
 					break;
 				case 1:
-					this.drawStates.drawJumpRight.bind(this)();
+					this.drawStates.drawJumpRight.bind(this)(drawX);
 					break;
 				case -1:
-					this.drawStates.drawJumpLeft.bind(this)();
+					this.drawStates.drawJumpLeft.bind(this)(drawX);
 					break;
 			}
 		} else {
 			switch (this.movement.walkDirection) {
 				case 0:
-					this.drawStates.drawFront.bind(this)();
+					this.drawStates.drawFront.bind(this)(drawX);
 					break;
 				case 1:
-					this.drawStates.drawRight.bind(this)();
+					this.drawStates.drawRight.bind(this)(drawX);
 					break;
 				case -1:
-					this.drawStates.drawLeft.bind(this)();
+					this.drawStates.drawLeft.bind(this)(drawX);
 					break;
 			}
 		}
@@ -650,10 +678,12 @@ function Enemy(posX, speed, size) { //posX is coords for the center of an enemy.
 	this.directionX = Math.round(Math.random()) * 2 - 1;;
 	this.inCanyon = false;
 
-	this.draw = function () {
+	this.draw = function (cameraPos) {
+		let drawX = this.x - cameraPos + canvasSize.x / 2;
+
 		fill(225, 0, 0);
 		noStroke();
-		circle(this.x, this.y, 2 * this.radius);
+		circle(drawX, this.y, 2 * this.radius);
 	}
 
 	this.move = function () {
@@ -670,9 +700,9 @@ function Enemy(posX, speed, size) { //posX is coords for the center of an enemy.
 			} // checks if enemy reaches a canyon
 		}
 
-		if (this.x < this.radius || this.x > (canvasSize.x - this.radius)) {
+		if (this.x < this.radius || this.x > (worldSize - this.radius)) {
 			this.directionX *= -1;
-			this.x = (this.directionX === -1) ? (canvasSize.x - this.radius) : this.radius;
+			this.x = (this.directionX === -1) ? (worldSize - this.radius) : this.radius;
 		} // checks if enemy reaches an end of the canvas
 	}
 
@@ -693,6 +723,22 @@ function Enemy(posX, speed, size) { //posX is coords for the center of an enemy.
 	}
 
 	return this;
+}
+
+function Camera() {
+	this.x = canvasSize.x/2;
+
+	this.move = function(char) {
+
+		if(char.x <= canvasSize.x / 2) {
+			this.x = canvasSize.x / 2;
+		} else if(char.x < worldSize - canvasSize.x / 2) {
+			this.x = char.x;
+		} else {
+			this.x = worldSize - canvasSize.x / 2;
+		}
+
+	}
 }
 
 function objectGenerator(seconds) { //random object generator, seconds is how much player has to wait till next object
