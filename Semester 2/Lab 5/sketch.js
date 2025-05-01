@@ -17,7 +17,7 @@ const canvasSize = {
 	y: 576
 };
 
-const worldSize = 1536;
+const worldSize = 2048;
 
 const groundBorder = 432;
 const fps = 60;
@@ -28,34 +28,23 @@ const gameObjects = {
 
 		new Cloud(200, 150, 1),
 
-		new Mountain(500, 1),
+		new Mountain(1900, 1),
 
-		new Tree(1200, 1),
-
-		new Flag(425, "Red"),
-
-		new Flag(850, "Red"),
+		new Tree(100, 1),
 
 		new Flag(25, "Green")
 	],
 
 	canyons: [
-		new Canyon(175, 100),
-
-		new Canyon(600, 100),
-
-		new Canyon(900, 200)
 	],
 
 	platforms: [
-		new Platform(175, 350, 100, 25, "Green"),
-		
-		new Platform(100, 250, 100, 25, "Green"),
-
-		new Platform(900, 350, 200, 25, "Green")
 	],
 
 	coins: [
+	],
+
+	enemySpawnPoints: [
 	],
 
 	enemies: [
@@ -126,7 +115,7 @@ function setup() {
 	buttons.reset.hide();
 	buttons.musicOff = createButton('Pause')
 	buttons.musicOff.mousePressed(pauseMusic);
-	buttons.musicOff.position(25, canvasSize.y+165);
+	buttons.musicOff.position(25, canvasSize.y + 165);
 	buttons.musicOff.style("border", "2px solid");
 	buttons.musicOff.style("border-radius", "10px");
 	
@@ -135,15 +124,17 @@ function setup() {
 	images.music.position(37, canvasSize.y+135);
 	images.musicOff = createImg("assets/off.svg");
 	images.musicOff.size(25, 25);
-	images.musicOff.position(37, canvasSize.y+135);
+	images.musicOff.position(37, canvasSize.y + 135);
 	images.musicOff.hide();
 	images.sound = createImg("assets/sfx.svg");
 	images.sound.size(25, 25);
-	images.sound.position(140, canvasSize.y+135);
+	images.sound.position(140, canvasSize.y + 135);
 	images.soundOff = createImg("assets/off.svg");
 	images.soundOff.size(25, 25);
-	images.soundOff.position(140, canvasSize.y+135);
+	images.soundOff.position(140, canvasSize.y + 135);
 	images.soundOff.hide();
+
+	mapGenerator(10);
 }
 
 function draw() {
@@ -165,6 +156,8 @@ function draw() {
 
 	gameObjects.coins.forEach((coin, ind) => (coin.move(), coin.collect(ind), coin.draw(camera.x))); // moves, draws and collects all coins
 
+	gameObjects.enemySpawnPoints.forEach(point => point.draw(camera.x));
+
 	gameObjects.enemies.forEach((enemy, ind) => (enemy.move(), enemy.death(ind), enemy.draw(camera.x))); // moves, draws and kills all enemies
 	
 	if(!isDead) {
@@ -173,7 +166,7 @@ function draw() {
 
 	(counter => (counter.checkScore(), counter.draw()))(scoreCounter); //draws score counter
 
-	objectGenerator(3); // generate random object every 3 seconds
+	objectGenerator(3, 3); // generate random object every 3 seconds, max 3 enemies
 }
 
 function Canyon(posX, width) { //posX is coords for top left corner. width is width of a canyon
@@ -542,9 +535,8 @@ function Character() { // coords of this objects are located in the middle of bo
 		} // checks which direction character should walk
 
 		let foundPlatform = false;
-		let sortedPlatforms = gameObjects.platforms.toSorted((a, b) => b.y - a.y);
 		for(i = 0; i < gameObjects.platforms.length; i++) {
-			let platform = sortedPlatforms[i];
+			let platform = gameObjects.platforms[i];
 			if( (((this.x - 11) >= platform.x && (this.x - 11) <= (platform.x + platform.width)) ||
 				((this.x + 11) >= platform.x && (this.x + 11) <= (platform.x + platform.width))) &&
 				this.y <= platform.y) {
@@ -726,7 +718,7 @@ function Enemy(posX, speed, size) { //posX is coords for the center of an enemy.
 }
 
 function Camera() {
-	this.x = canvasSize.x/2;
+	this.x = canvasSize.x / 2;
 
 	this.move = function(char) {
 
@@ -741,7 +733,46 @@ function Camera() {
 	}
 }
 
-function objectGenerator(seconds) { //random object generator, seconds is how much player has to wait till next object
+function mapGenerator(numOfCan) {
+	for(let cans = 0; cans < numOfCan; cans++) {
+		let width = Math.random() * 250 + 50;
+		let borderPad = 150;
+		let canyonPad = 100;
+		let pos;
+
+		if(gameObjects.canyons.length === 0) {
+			pos = Math.random() * (worldSize - borderPad * 2 - width) + borderPad;
+		} else {
+			for(let ind = 0; ind <= gameObjects.canyons.length; ind++) {
+				let start = ind === 0 ? borderPad : gameObjects.canyons[ind-1].x + gameObjects.canyons[ind-1].width + canyonPad;
+				let end = ind === gameObjects.canyons.length ? worldSize - borderPad : gameObjects.canyons[ind].x - canyonPad;
+				let length = end - start - width;
+				if(length >= 0) {
+					pos = Math.random() * length + start;
+					break;
+				}
+			}
+		}
+		if(pos != undefined) {
+			gameObjects.canyons.push(new Canyon(pos, width));
+			gameObjects.canyons.sort((a, b) => a.x - b.x);
+			if(width > 100) {
+				let platformPad = 25;
+				gameObjects.platforms.push(new Platform(pos + platformPad, 350, width - platformPad * 2, 25, "Green"));
+				gameObjects.platforms.sort((a, b) => b.y - a.y);
+			}
+		}
+	}
+
+	for(let ind = 1; ind < gameObjects.canyons.length; ind++) {
+		let leftCan = gameObjects.canyons[ind-1];
+		let rightCan = gameObjects.canyons[ind];
+		let pos = (rightCan.x + leftCan.x + leftCan.width) / 2;
+		gameObjects.enemySpawnPoints.push(new Flag(pos, "Red"));
+	}
+}
+
+function objectGenerator(seconds, enemyLimit) { //random object generator, seconds is how much player has to wait till next object
 	let frames = seconds * fps; //frames to wait
 	let secondsLeft = Math.ceil((seconds - frameCount % (seconds * fps) / fps)); // seconds left till next object
 	textSize(25);
@@ -749,13 +780,14 @@ function objectGenerator(seconds) { //random object generator, seconds is how mu
 	text(`Next object: ${secondsLeft}`, 865, 25);
 	if (frameCount % frames === 0) {
 		let randAct = Math.round(Math.random());
-		if (randAct === 0 || gameObjects.enemies.length === 3) {
-			let coinX = Math.random() * canvasSize.x;
+		if (randAct === 0 || gameObjects.enemies.length === enemyLimit) {
+			let coinX = Math.random() * worldSize;
 			let coinY = Math.random() * groundBorder;
 			let coinSize = Math.random() / 2 + 1;
 			gameObjects.coins.push(new Coin(coinX, coinY, 250, coinSize)); // creates new coin with random coords and size
 		} else {
-			let enemyX = (Math.round(Math.random()) + 1) * 425;
+			let indFlag = Math.floor(Math.random() * gameObjects.enemySpawnPoints.length);
+			let enemyX = gameObjects.enemySpawnPoints[indFlag].x;
 			let enemySize = Math.random() / 2 + 1;
 			gameObjects.enemies.push(new Enemy(enemyX, 100, enemySize)); // create new enemy with random coords and size
 		}
