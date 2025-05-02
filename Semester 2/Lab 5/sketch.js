@@ -134,7 +134,7 @@ function setup() {
 	images.soundOff.position(140, canvasSize.y + 135);
 	images.soundOff.hide();
 
-	mapGenerator(10);
+	mapGenerator(3);
 }
 
 function draw() {
@@ -156,7 +156,7 @@ function draw() {
 
 	gameObjects.coins.forEach((coin, ind) => (coin.move(), coin.collect(ind), coin.draw(camera.x))); // moves, draws and collects all coins
 
-	gameObjects.enemySpawnPoints.forEach(point => point.draw(camera.x));
+	gameObjects.enemySpawnPoints.forEach(point => point.draw(camera.x)); //draws enemy spawnpoints
 
 	gameObjects.enemies.forEach((enemy, ind) => (enemy.move(), enemy.death(ind), enemy.draw(camera.x))); // moves, draws and kills all enemies
 	
@@ -733,8 +733,8 @@ function Camera() {
 	}
 }
 
-function mapGenerator(numOfCan) {
-	for(let cans = 0; cans < numOfCan; cans++) {
+function mapGenerator(numOfCan) { //generates map objects
+	for(let cans = 0; cans < numOfCan; cans++) { //generates canyons and platforms above wide canyons
 		let width = Math.random() * 250 + 50;
 		let borderPad = 150;
 		let canyonPad = 100;
@@ -744,9 +744,9 @@ function mapGenerator(numOfCan) {
 			pos = Math.random() * (worldSize - borderPad * 2 - width) + borderPad;
 		} else {
 			for(let ind = 0; ind <= gameObjects.canyons.length; ind++) {
-				let start = ind === 0 ? borderPad : gameObjects.canyons[ind-1].x + gameObjects.canyons[ind-1].width + canyonPad;
-				let end = ind === gameObjects.canyons.length ? worldSize - borderPad : gameObjects.canyons[ind].x - canyonPad;
-				let length = end - start - width;
+				let start = ind === 0 ? borderPad : gameObjects.canyons[ind-1].x + gameObjects.canyons[ind-1].width + canyonPad; //left side of section
+				let end = ind === gameObjects.canyons.length ? worldSize - borderPad : gameObjects.canyons[ind].x - canyonPad; //right side of section
+				let length = end - start - width; //length of section of possible placements
 				if(length >= 0) {
 					pos = Math.random() * length + start;
 					break;
@@ -764,7 +764,7 @@ function mapGenerator(numOfCan) {
 		}
 	}
 
-	for(let ind = 1; ind < gameObjects.canyons.length; ind++) {
+	for(let ind = 1; ind < gameObjects.canyons.length; ind++) { //generates enemy spawn points between canyons
 		let leftCan = gameObjects.canyons[ind-1];
 		let rightCan = gameObjects.canyons[ind];
 		let pos = (rightCan.x + leftCan.x + leftCan.width) / 2;
