@@ -21,6 +21,7 @@ const worldSize = 2048;
 
 const groundBorder = 432;
 const fps = 60;
+let paused = false;
 
 const gameObjects = {
 	sceneryObjects: [
@@ -100,11 +101,11 @@ function setup() {
 	sounds.music.loop();
 
 	sliders.music = createSlider(0, 100, 50);
-	sliders.music.position(0, canvasSize.y);
+	sliders.music.position(canvasSize.x / 2 - 150, canvasSize.y / 2 - 100);
 	sliders.music.size(100);
 	sliders.music.style("writing-mode", "sideways-lr");
 	sliders.sfx = createSlider(0, 100, 50);
-	sliders.sfx.position(100, canvasSize.y);
+	sliders.sfx.position(canvasSize.x / 2 - 50, canvasSize.y / 2 - 100);
 	sliders.sfx.size(100);
 	sliders.sfx.style("writing-mode", "sideways-lr");
 
@@ -115,23 +116,23 @@ function setup() {
 	buttons.reset.hide();
 	buttons.musicOff = createButton('Pause')
 	buttons.musicOff.mousePressed(pauseMusic);
-	buttons.musicOff.position(25, canvasSize.y + 165);
+	buttons.musicOff.position(canvasSize.x / 2 - 125, canvasSize.y / 2 + 65);
 	buttons.musicOff.style("border", "2px solid");
 	buttons.musicOff.style("border-radius", "10px");
 	
 	images.music = createImg("assets/music.svg");
 	images.music.size(25, 25);
-	images.music.position(37, canvasSize.y+135);
+	images.music.position(canvasSize.x / 2 - 113, canvasSize.y / 2 + 35);
 	images.musicOff = createImg("assets/off.svg");
 	images.musicOff.size(25, 25);
-	images.musicOff.position(37, canvasSize.y + 135);
+	images.musicOff.position(canvasSize.x / 2 - 113, canvasSize.y / 2 + 35);
 	images.musicOff.hide();
 	images.sound = createImg("assets/sfx.svg");
 	images.sound.size(25, 25);
-	images.sound.position(140, canvasSize.y + 135);
+	images.sound.position(canvasSize.x / 2 - 10, canvasSize.y / 2 + 35);
 	images.soundOff = createImg("assets/off.svg");
 	images.soundOff.size(25, 25);
-	images.soundOff.position(140, canvasSize.y + 135);
+	images.soundOff.position(canvasSize.x / 2 - 10, canvasSize.y / 2 + 35);
 	images.soundOff.hide();
 
 	mapGenerator(3);
@@ -139,34 +140,49 @@ function setup() {
 
 function draw() {
 
-	background(100, 155, 255); //fill the sky blue
-
 	soundVolume(sliders.music.value() / 100, sliders.sfx.value() / 100); // set volume for sounds
 
-	let isDead = gameObjects.mainCharacter.IsDead;
-	if (!isDead) {
-		(char => (char.move(), camera.move(char), char.death()))(gameObjects.mainCharacter); // moves character and camera, checks if he is not dead
+	if(!paused) {
+		background(100, 155, 255); //fill the sky blue
+
+		let isDead = gameObjects.mainCharacter.IsDead;
+		if (!isDead) {
+			(char => (char.move(), camera.move(char), char.death()))(gameObjects.mainCharacter); // moves character and camera, checks if he is not dead
+		}
+
+		gameObjects.sceneryObjects.forEach(object => object.draw(camera.x)); // draws all background objects
+
+		gameObjects.canyons.forEach(canyon => canyon.draw(camera.x)); // draws all canyons
+
+		gameObjects.platforms.forEach(platfrom => platfrom.draw(camera.x)); //draws all platforms
+
+		gameObjects.coins.forEach((coin, ind) => (coin.move(), coin.collect(ind), coin.draw(camera.x))); // moves, draws and collects all coins
+
+		gameObjects.enemySpawnPoints.forEach(point => point.draw(camera.x)); //draws enemy spawnpoints
+
+		gameObjects.enemies.forEach((enemy, ind) => (enemy.move(), enemy.death(ind), enemy.draw(camera.x))); // moves, draws and kills all enemies
+		
+		if(!isDead) {
+			gameObjects.mainCharacter.draw(camera.x); //draws character
+		}
+
+		(counter => (counter.checkScore(), counter.draw()))(scoreCounter); //draws score counter
+
+		objectGenerator(3, 3); // generate random object every 3 seconds, max 3 enemies
+	} else { 
+		pauseScreen();
 	}
+}
 
-	gameObjects.sceneryObjects.forEach(object => object.draw(camera.x)); // draws all background objects
-
-	gameObjects.canyons.forEach(canyon => canyon.draw(camera.x)); // draws all canyons
-
-	gameObjects.platforms.forEach(platfrom => platfrom.draw(camera.x)); //draws all platforms
-
-	gameObjects.coins.forEach((coin, ind) => (coin.move(), coin.collect(ind), coin.draw(camera.x))); // moves, draws and collects all coins
-
-	gameObjects.enemySpawnPoints.forEach(point => point.draw(camera.x)); //draws enemy spawnpoints
-
-	gameObjects.enemies.forEach((enemy, ind) => (enemy.move(), enemy.death(ind), enemy.draw(camera.x))); // moves, draws and kills all enemies
-	
-	if(!isDead) {
-		gameObjects.mainCharacter.draw(camera.x); //draws character
+function keyPressed() {
+	if(keyCode === 27) {
+		paused = !paused;
 	}
+}
 
-	(counter => (counter.checkScore(), counter.draw()))(scoreCounter); //draws score counter
-
-	objectGenerator(3, 3); // generate random object every 3 seconds, max 3 enemies
+function pauseScreen() {
+	background(48); //fill the sky blue
+	text("Paused", canvasSize.x / 2 - 85, canvasSize.y / 2 - 150);
 }
 
 function Canyon(posX, width) { //posX is coords for top left corner. width is width of a canyon
@@ -801,19 +817,33 @@ function soundVolume(musicVol, sfxVol) { //musicVol is volume of music and sfxVo
 	sounds.fall.amp(sfxVol * 0.25);
 	sounds.kill.amp(sfxVol * 0.25);
 
-	if(sounds.music.amp().value === 0 || sounds.music.isPaused()) {
+	if(paused) {
+		sliders.music.show();
+		sliders.sfx.show();
+		buttons.musicOff.show();
+
+		if(sounds.music.amp().value === 0 || sounds.music.isPaused()) {
+			images.music.hide();
+			images.musicOff.show();
+		} else {
+			images.music.show();
+			images.musicOff.hide();
+		}
+		if(sounds.death.amp().value === 0) {
+			images.sound.hide();
+			images.soundOff.show();
+		} else {
+			images.sound.show();
+			images.soundOff.hide();
+		}
+	} else {
 		images.music.hide();
-		images.musicOff.show();
-	} else {
-		images.music.show();
 		images.musicOff.hide();
-	}
-	if(sounds.death.amp().value === 0) {
 		images.sound.hide();
-		images.soundOff.show();
-	} else {
-		images.sound.show();
 		images.soundOff.hide();
+		sliders.music.hide();
+		sliders.sfx.hide();
+		buttons.musicOff.hide()
 	}
 }
 
